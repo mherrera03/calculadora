@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Vacaciones y Aguinaldo Proporcional</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3e8ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        #calculator-container {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 14px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 680px;
+            border-top: 6px solid #7B68EE;
+        }
+
+        h1 {
+            text-align: center;
+            color: #6A0DAD;
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        input[type="text"], input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: #7B68EE;
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #7B68EE;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #5D3FD3;
+        }
+
+        #results, #legal-info {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background-color: #faf7ff;
+        }
+
+        .result-item {
+            font-size: 1em;
+            margin-bottom: 8px;
+            color: #000;
+        }
+
+        .result-item strong {
+            color: #6A0DAD;
+        }
+
+        .formula {
+            background: #eee8ff;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .legal-article {
+            font-style: italic;
+            color: #4B0082;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #7B68EE;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .highlight {
+            background-color: #d8b4fe !important;
+        }
+
+        .error-message {
+            color: #dc3545;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div id="calculator-container">
+    <h1>Calculadora de Vacaciones y Aguinaldo Proporcional</h1>
+
+    <label for="salarioMensual">Salario Mensual (USD)</label>
+    <input type="text" id="salarioMensual" placeholder="Ej: 600.00" required>
+
+    <label for="fechaInicio">Fecha de Inicio Laboral</label>
+    <input type="date" id="fechaInicio" required>
+
+    <label for="fechaFin">Fecha de Terminación o Corte</label>
+    <input type="date" id="fechaFin" required>
+
+    <button onclick="calcularPrestaciones()">Calcular Prestaciones</button>
+
+    <div id="error-message" class="error-message" style="display:none;"></div>
+
+    <div id="results"></div>
+    <div id="legal-info"></div>
+</div>
+
+<script>
+function getDaysBetween(start, end) {
+    const oneDay = 1000 * 60 * 60 * 24;
+    return Math.round((end - start) / oneDay) + 1;
+}
+
+function calcularPrestaciones() {
+    const salarioInput = document.getElementById('salarioMensual').value.trim();
+    const fechaInicio = document.getElementById('fechaInicio').value;
+    const fechaFin = document.getElementById('fechaFin').value;
+    const results = document.getElementById('results');
+    const legal = document.getElementById('legal-info');
+    const errorMsg = document.getElementById('error-message');
+
+    results.innerHTML = '';
+    legal.innerHTML = '';
+    errorMsg.style.display = 'none';
+
+    if (!salarioInput || !fechaInicio || !fechaFin) {
+        errorMsg.innerHTML = '⚠️ Por favor, complete todos los campos.';
+        errorMsg.style.display = 'block';
+        return;
+    }
+
+    let salarioMensual = parseFloat(salarioInput);
+    if (isNaN(salarioMensual) || salarioMensual <= 0) {
+        errorMsg.innerHTML = '⚠️ El salario debe ser un número positivo.';
+        errorMsg.style.display = 'block';
+        return;
+    }
+
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
+
+    if (fin <= inicio) {
+        errorMsg.innerHTML = '⚠️ La fecha de fin debe ser posterior a la de inicio.';
+        errorMsg.style.display = 'block';
+        return;
+    }
+
+    const diasTrabajados = getDaysBetween(inicio, fin);
+    const salarioDiario = salarioMensual / 30;
+    const DIAS_X_ANIO = 365;
+    const DIAS_VACACION = 15;
+    const BONO_VACACION = 1.30;
+
+    const vacacionProporcional = salarioDiario * (diasTrabajados / DIAS_X_ANIO) * DIAS_VACACION * BONO_VACACION;
+    const tipoVacacion = diasTrabajados < 365 ? 'Vacación proporcional' : 'Vacación completa';
+
+    const anioFin = fin.getFullYear();
+    let inicioCicloAguinaldo = new Date(`${anioFin - 1}-12-13`);
+    if (inicio > inicioCicloAguinaldo) inicioCicloAguinaldo = inicio;
+    const diasAguinaldo = getDaysBetween(inicioCicloAguinaldo, fin);
+    const aguinaldoCompleto = salarioDiario * 15;
+    const aguinaldoProporcional = (aguinaldoCompleto / 365) * diasAguinaldo;
+
+    let filaResaltada = 1;
+    if (diasTrabajados < 365) filaResaltada = 1;
+    else if (diasTrabajados < 3 * 365) filaResaltada = 2;
+    else if (diasTrabajados < 10 * 365) filaResaltada = 3;
+    else filaResaltada = 4;
+
+    results.innerHTML = `
+        <h2 style="color:#000">Resultado</h2>
+        <p class="result-item">Vacaciones: Tipo: <strong>${tipoVacacion}</strong> — Monto: <strong>$${vacacionProporcional.toFixed(2)}</strong></p>
+        <p class="result-item">Aguinaldo proporcional: Categoría: <strong>15 días</strong>. Pago completo equivalente: <strong>$${aguinaldoCompleto.toFixed(2)}</strong>.<br>Pago proporcional por ${diasAguinaldo} días: <strong>$${aguinaldoProporcional.toFixed(2)}</strong></p>
+        <hr>
+        <p class="result-item" style="font-weight:bold; color:#000">TOTAL A RECIBIR: <strong>$${(vacacionProporcional + aguinaldoProporcional).toFixed(2)}</strong></p>
+
+        <h3 style="color:#000">Tabla de Días por Años de Laborar</h3>
+        <table id="tablaLabor">
+            <tr><th>Años de Laborar</th><th>Días</th></tr>
+            <tr><td>Menos de 1 año</td><td>Proporcional</td></tr>
+            <tr><td>Entre 1 y 3 años</td><td>15 días de salario</td></tr>
+            <tr><td>Entre 3 y 10 años</td><td>19 días de salario</td></tr>
+            <tr><td>10 o más años</td><td>21 días de salario</td></tr>
+        </table>
+    `;
+
+    const tabla = document.getElementById('tablaLabor');
+    tabla.rows[filaResaltada].classList.add('highlight');
+
+    legal.innerHTML = `
+        <h2 style="color:#000">Fórmulas Aplicadas</h2>
+
+        <h3>Vacaciones (VP)</h3>
+        <p><strong>SBD:</strong> Salario Básico Diario = Salario mensual / 30</p>
+        <p><strong>RV:</strong> Remuneración por período vacacional = SBD × (Días trabajados / 365) × 15 × 1.30</p>
+        <div class="formula">
+            Ejemplo: RV = $${salarioDiario.toFixed(2)} × (${diasTrabajados} / 365) × 15 × 1.30 = <strong>$${vacacionProporcional.toFixed(2)}</strong>
+        </div>
+
+        <h3>Aguinaldo (AP)</h3>
+        <p><strong>P_A:</strong> Prestación por aguinaldo = (SBD × 15) / 365 × Días trabajados en el ciclo</p>
+        <div class="formula">
+            Ejemplo: P_A = ($${salarioDiario.toFixed(2)} × 15) / 365 × ${diasAguinaldo} = <strong>$${aguinaldoProporcional.toFixed(2)}</strong>
+        </div>
+
+       
+        <p class="legal-article">Basado en los Artículos 187, 197 y 202 del Código de Trabajo: vacaciones de 15 días con 30% adicional y aguinaldo proporcional según tiempo laborado.</p>
+    `;
+}
+</script>
+
+</body>
+</html>
